@@ -141,6 +141,131 @@
     }
   }
 
+  // ---------- world map ----------
+
+  let worldGeo = null;
+  let worldGeoRequested = false;
+  let lastLoc = null;
+
+  function loadWorld() {
+    if (worldGeoRequested) return;
+    worldGeoRequested = true;
+    fetch('https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((geo) => {
+        worldGeo = geo;
+        if (lastLoc) drawMap(lastLoc.lat, lastLoc.lon);
+      })
+      .catch(() => { /* map falls back to graticule only */ });
+  }
+
+  // equirectangular projection
+  function project(lat, lon, w, h) {
+    return [((lon + 180) / 360) * w, ((90 - lat) / 180) * h];
+  }
+
+  function drawLand(ctx, w, h) {
+    if (!worldGeo) return;
+    ctx.fillStyle = '#3a4468';
+    ctx.beginPath();
+    for (const feature of worldGeo.features) {
+      const g = feature.geometry;
+      if (!g) continue;
+      const polys = g.type === 'Polygon' ? [g.coordinates]
+        : g.type === 'MultiPolygon' ? g.coordinates : [];
+      for (const poly of polys) {
+        for (const ring of poly) {
+          ring.forEach(([lon, lat], i) => {
+            const [x, y] = project(lat, lon, w, h);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+        }
+      }
+    }
+    ctx.fill();
+  }
+
+  function drawMap(lat, lon) {
+    const canvas = $('mapCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const now = new Date();
+    const sub = Astro.getSubLunarPoint(now);
+
+    // ocean
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#131a33';
+    ctx.fillRect(0, 0, w, h);
+
+    // graticule
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = 1;
+    for (let gl = -150; gl <= 150; gl += 30) {
+      const [x] = project(0, gl, w, h);
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let gl = -60; gl <= 60; gl += 30) {
+      const [, y] = project(gl, 0, w, h);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    drawLand(ctx, w, h);
+
+    // shade the hemisphere that cannot see the moon:
+    // visible where the great-circle distance to the sub-lunar point < 90°
+    const shade = document.createElement('canvas');
+    const sw = 360;
+    const sh = 180;
+    shade.width = sw;
+    shade.height = sh;
+    const sctx = shade.getContext('2d');
+    const img = sctx.createImageData(sw, sh);
+    const sinLat1 = Math.sin(sub.lat * rad);
+    const cosLat1 = Math.cos(sub.lat * rad);
+    for (let py = 0; py < sh; py++) {
+      const phi = (90 - ((py + 0.5) / sh) * 180) * rad;
+      const sinPhi = Math.sin(phi);
+      const cosPhi = Math.cos(phi);
+      for (let px = 0; px < sw; px++) {
+        const lam = (((px + 0.5) / sw) * 360 - 180) * rad;
+        const cosc = sinLat1 * sinPhi +
+          cosLat1 * cosPhi * Math.cos(lam - sub.lon * rad);
+        if (cosc < 0) {
+          const idx = (py * sw + px) * 4;
+          img.data[idx + 2] = 12;
+          img.data[idx + 3] = 150; // translucent night shadow
+        }
+      }
+    }
+    sctx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(shade, 0, 0, w, h);
+
+    // soft glow + moon marker at the sub-lunar point
+    const [mx, my] = project(sub.lat, sub.lon, w, h);
+    const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 60);
+    glow.addColorStop(0, 'rgba(255, 233, 170, 0.35)');
+    glow.addColorStop(1, 'rgba(255, 233, 170, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(mx, my, 60, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🌙', mx, my);
+
+    // user marker
+    const [ux, uy] = project(lat, lon, w, h);
+    ctx.font = '30px sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('📍', ux, uy + 4);
+  }
+
   // ---------- data -> UI ----------
 
   function nextRiseSet(kind, lat, lon) {
@@ -216,6 +341,10 @@
     const newDate = new Date(now.valueOf() + daysToNew * 86400000);
     $('nextFull').textContent = `🌕 ${fmtDate.format(fullDate)}`;
     $('nextNew').textContent = `next new moon ${fmtDate.format(newDate)}`;
+
+    lastLoc = { lat, lon };
+    loadWorld();
+    drawMap(lat, lon);
 
     $('updatedAt').textContent =
       `Computed for ${fmtDate.format(now)}, ${fmtTime.format(now)} at ` +

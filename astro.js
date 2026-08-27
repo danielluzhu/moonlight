@@ -167,7 +167,18 @@
     return result;
   }
 
+  // Point on Earth where the moon is at the zenith right now
+  function getSubLunarPoint(date) {
+    const d = toDays(date);
+    const c = moonCoords(d);
+    const theta = rad * (280.16 + 360.9856235 * d); // Greenwich sidereal angle
+    let lon = (c.ra - theta) / rad;
+    lon = ((lon % 360) + 540) % 360 - 180;
+    return { lat: c.dec / rad, lon };
+  }
+
   global.Astro = {
+    getSubLunarPoint,
     rad,
     SYNODIC_MONTH,
     MOON_RADIUS_KM,

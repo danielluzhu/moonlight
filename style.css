@@ -16,12 +16,13 @@
 
 html {
   min-height: 100%;
+  background: var(--bg-bottom);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--ink);
-  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%) fixed;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   min-height: 100vh;
 }
 
@@ -262,6 +263,34 @@ body {
 }
 
 .stat .sub {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.map-card {
+  margin-top: 14px;
+  padding: 18px 20px 14px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-card .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.map-card canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.map-card .sub {
   font-size: 0.85rem;
   color: var(--ink-dim);
 }
