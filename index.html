@@ -4,11 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Moonlight — Tonight's Moon</title>
+  <meta name="theme-color" content="#05070f" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
 
   <main class="app">
     <header class="header">
@@ -90,7 +95,7 @@
         <span class="label">Who can see the moon right now</span>
         <canvas id="mapCanvas" width="1440" height="720"></canvas>
         <p class="sub">The bright region has the moon above the horizon.
-          🌙 marks where it is directly overhead; 📍 is you.</p>
+          🌙 marks where it is directly overhead; the gold dot is you.</p>
       </div>
 
       <p class="footnote" id="updatedAt"></p>

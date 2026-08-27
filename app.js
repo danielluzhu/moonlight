@@ -51,26 +51,18 @@
     const h = canvas.height;
     const cx = w / 2;
     const cy = h / 2;
-    const r = Math.min(w, h) / 2 - 24;
+    const r = Math.min(w, h) / 2 - 34;
 
     ctx.clearRect(0, 0, w, h);
 
-    // outer glow
-    const glow = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r + 24);
-    glow.addColorStop(0, 'rgba(226, 232, 255, 0.16)');
-    glow.addColorStop(1, 'rgba(226, 232, 255, 0)');
-    ctx.fillStyle = glow;
+    // atmospheric halo
+    const halo = ctx.createRadialGradient(cx, cy, r * 0.7, cx, cy, r + 34);
+    halo.addColorStop(0, 'rgba(245, 224, 176, 0.16)');
+    halo.addColorStop(0.55, 'rgba(206, 218, 255, 0.06)');
+    halo.addColorStop(1, 'rgba(206, 218, 255, 0)');
+    ctx.fillStyle = halo;
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 24, 0, Math.PI * 2);
-    ctx.fill();
-
-    const LIT = '#e8e4d8';
-    const DARK = '#1b2036';
-
-    // full disc in shadow
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = DARK;
+    ctx.arc(cx, cy, r + 34, 0, Math.PI * 2);
     ctx.fill();
 
     // In the northern hemisphere a waxing moon is lit on the right.
@@ -78,67 +70,169 @@
     if (southernHemisphere) litRight = !litRight;
 
     const cosA = Math.cos(2 * Math.PI * phase); // >0 crescent, <0 gibbous
-    const rx = Math.abs(cosA) * r;
+    const rx = Math.max(Math.abs(cosA) * r, 0.001);
 
-    // lit half-disc
-    ctx.beginPath();
-    if (litRight) ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
-    else ctx.arc(cx, cy, r, Math.PI / 2, (3 * Math.PI) / 2);
-    ctx.closePath();
-    ctx.fillStyle = LIT;
-    ctx.fill();
+    // sharp mask of the lit region (half disc +/- terminator ellipse)
+    const mask = document.createElement('canvas');
+    mask.width = w;
+    mask.height = h;
+    const mctx = mask.getContext('2d');
+    mctx.fillStyle = '#fff';
+    mctx.beginPath();
+    if (litRight) mctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
+    else mctx.arc(cx, cy, r, Math.PI / 2, (3 * Math.PI) / 2);
+    mctx.closePath();
+    mctx.fill();
+    mctx.beginPath();
+    mctx.ellipse(cx, cy, rx, r, 0, 0, Math.PI * 2);
+    if (cosA > 0) {
+      mctx.globalCompositeOperation = 'destination-out'; // carve crescent
+      mctx.fill();
+      mctx.globalCompositeOperation = 'source-over';
+    } else {
+      mctx.fill(); // extend gibbous
+    }
 
-    // terminator ellipse: carves the crescent or extends the gibbous
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, Math.max(rx, 0.001), r, 0, 0, Math.PI * 2);
-    ctx.fillStyle = cosA > 0 ? DARK : LIT;
-    ctx.fill();
+    // blur the mask so the terminator falls off softly
+    const soft = document.createElement('canvas');
+    soft.width = w;
+    soft.height = h;
+    const softCtx = soft.getContext('2d');
+    softCtx.filter = `blur(${Math.max(w / 90, 3)}px)`;
+    softCtx.drawImage(mask, 0, 0);
 
-    // maria / craters, clipped to the disc
+    // sun-lit surface texture
+    const lit = document.createElement('canvas');
+    lit.width = w;
+    lit.height = h;
+    const lctx = lit.getContext('2d');
+    const sunX = cx + (litRight ? 1 : -1) * r * 0.4;
+    const surface = lctx.createRadialGradient(sunX, cy - r * 0.3, r * 0.1, cx, cy, r * 1.12);
+    surface.addColorStop(0, '#f9f5e8');
+    surface.addColorStop(0.55, '#e4ddc9');
+    surface.addColorStop(1, '#b8b1a0');
+    lctx.fillStyle = surface;
+    lctx.beginPath();
+    lctx.arc(cx, cy, r, 0, Math.PI * 2);
+    lctx.fill();
+
+    // maria — the large dark plains, softly blurred
+    const maria = [
+      [-0.28, -0.30, 0.30, 0.24], [0.14, -0.16, 0.22, 0.18],
+      [-0.06, 0.20, 0.26, 0.20], [0.33, 0.24, 0.14, 0.12],
+      [0.10, -0.44, 0.14, 0.10],
+    ];
+    lctx.save();
+    lctx.beginPath();
+    lctx.arc(cx, cy, r, 0, Math.PI * 2);
+    lctx.clip();
+    lctx.filter = `blur(${Math.max(w / 60, 4)}px)`;
+    lctx.fillStyle = 'rgba(122, 119, 112, 0.30)';
+    for (const [dx, dy, mrx, mry] of maria) {
+      lctx.beginPath();
+      lctx.ellipse(cx + dx * r, cy + dy * r, mrx * r, mry * r, 0, 0, Math.PI * 2);
+      lctx.fill();
+    }
+    lctx.filter = 'none';
+
+    // craters — small, with a bright rim on the sunward side
+    const craters = [
+      [-0.44, 0.16, 0.075], [0.44, -0.30, 0.06], [-0.18, 0.48, 0.07],
+      [0.30, 0.46, 0.05], [-0.52, -0.14, 0.05], [0.52, 0.06, 0.045],
+      [0.02, 0.58, 0.055], [-0.34, -0.52, 0.05],
+    ];
+    for (const [dx, dy, cr] of craters) {
+      const px = cx + dx * r;
+      const py = cy + dy * r;
+      const pr = cr * r;
+      const pit = lctx.createRadialGradient(px, py, pr * 0.1, px, py, pr);
+      pit.addColorStop(0, 'rgba(108, 105, 98, 0.30)');
+      pit.addColorStop(0.75, 'rgba(108, 105, 98, 0.16)');
+      pit.addColorStop(1, 'rgba(108, 105, 98, 0)');
+      lctx.fillStyle = pit;
+      lctx.beginPath();
+      lctx.arc(px, py, pr, 0, Math.PI * 2);
+      lctx.fill();
+      lctx.strokeStyle = 'rgba(255, 252, 240, 0.20)';
+      lctx.lineWidth = Math.max(pr * 0.14, 1);
+      lctx.beginPath();
+      lctx.arc(px, py, pr * 0.85, Math.PI * 0.7, Math.PI * 1.6);
+      lctx.stroke();
+    }
+    lctx.restore();
+
+    // keep only the lit region, with the soft terminator edge
+    lctx.globalCompositeOperation = 'destination-in';
+    lctx.drawImage(soft, 0, 0);
+
+    // assemble: earthshine-lit dark side, then the lit surface, clipped to the disc
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.clip();
-    const craters = [
-      [-0.30, -0.28, 0.24], [0.18, -0.10, 0.17], [-0.05, 0.24, 0.20],
-      [0.36, 0.30, 0.11], [-0.42, 0.18, 0.09], [0.05, -0.42, 0.10],
-      [0.44, -0.30, 0.07], [-0.20, 0.46, 0.08],
-    ];
-    ctx.fillStyle = 'rgba(90, 96, 120, 0.16)';
-    for (const [dx, dy, cr] of craters) {
-      ctx.beginPath();
-      ctx.arc(cx + dx * r, cy + dy * r, cr * r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    const dark = ctx.createRadialGradient(cx, cy - r * 0.3, r * 0.2, cx, cy, r * 1.1);
+    dark.addColorStop(0, '#2b3151');
+    dark.addColorStop(0.6, '#1e2340');
+    dark.addColorStop(1, '#161a30');
+    ctx.fillStyle = dark;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    ctx.drawImage(lit, 0, 0);
     ctx.restore();
 
     // faint rim so the dark limb reads against the sky
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(226, 232, 255, 0.18)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(226, 233, 255, 0.14)';
+    ctx.lineWidth = 1.2;
     ctx.stroke();
   }
 
   // ---------- starfield ----------
 
-  function drawStars() {
+  let starField = [];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function initStars() {
     const canvas = $('stars');
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
     const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    const n = Math.floor((window.innerWidth * window.innerHeight) / 5000);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.floor((window.innerWidth * window.innerHeight) / 4200);
+    starField = [];
     for (let i = 0; i < n; i++) {
-      const x = Math.random() * window.innerWidth;
-      const y = Math.random() * window.innerHeight;
-      const size = Math.random() * 1.4 + 0.3;
-      ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.7 + 0.1})`;
+      starField.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: Math.random() < 0.06 ? Math.random() * 1.2 + 1.3 : Math.random() * 1.1 + 0.3,
+        base: Math.random() * 0.55 + 0.15,
+        warm: Math.random() < 0.18, // a few golden stars among the white
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.0012 + 0.0003,
+      });
+    }
+    if (reducedMotion) paintStars(0);
+  }
+
+  function paintStars(t) {
+    const canvas = $('stars');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (const s of starField) {
+      const twinkle = reducedMotion ? 1 : 0.65 + 0.35 * Math.sin(s.phase + t * s.speed);
+      ctx.fillStyle = s.warm
+        ? `rgba(245, 224, 176, ${s.base * twinkle})`
+        : `rgba(235, 240, 255, ${s.base * twinkle})`;
       ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+
+  function tickStars(t) {
+    paintStars(t);
+    requestAnimationFrame(tickStars);
   }
 
   // ---------- world map ----------
@@ -166,7 +260,7 @@
 
   function drawLand(ctx, w, h) {
     if (!worldGeo) return;
-    ctx.fillStyle = '#3a4468';
+    ctx.fillStyle = '#414b78';
     ctx.beginPath();
     for (const feature of worldGeo.features) {
       const g = feature.geometry;
@@ -198,7 +292,7 @@
 
     // ocean
     ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = '#131a33';
+    ctx.fillStyle = '#0d1330';
     ctx.fillRect(0, 0, w, h);
 
     // graticule
@@ -236,8 +330,10 @@
           cosLat1 * cosPhi * Math.cos(lam - sub.lon * rad);
         if (cosc < 0) {
           const idx = (py * sw + px) * 4;
-          img.data[idx + 2] = 12;
-          img.data[idx + 3] = 150; // translucent night shadow
+          img.data[idx] = 2;
+          img.data[idx + 1] = 3;
+          img.data[idx + 2] = 14;
+          img.data[idx + 3] = 165; // translucent night shadow
         }
       }
     }
@@ -259,11 +355,22 @@
     ctx.textBaseline = 'middle';
     ctx.fillText('🌙', mx, my);
 
-    // user marker
+    // user marker: gold dot with a halo ring
     const [ux, uy] = project(lat, lon, w, h);
-    ctx.font = '30px sans-serif';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('📍', ux, uy + 4);
+    const ring = ctx.createRadialGradient(ux, uy, 2, ux, uy, 20);
+    ring.addColorStop(0, 'rgba(245, 214, 152, 0.5)');
+    ring.addColorStop(1, 'rgba(245, 214, 152, 0)');
+    ctx.fillStyle = ring;
+    ctx.beginPath();
+    ctx.arc(ux, uy, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ux, uy, 6.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#f5d698';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
 
   // ---------- data -> UI ----------
@@ -305,7 +412,7 @@
 
     drawMoon($('moonCanvas'), illum.phase, lat < 0);
 
-    $('phaseName').textContent = `${info.emoji} ${info.name}`;
+    $('phaseName').textContent = info.name;
     $('phaseDetail').textContent =
       `${(illum.fraction * 100).toFixed(1)}% of the disc is illuminated`;
 
@@ -463,8 +570,9 @@
     $('gateMessage').textContent = 'To show tonight’s moon, Moonlight needs your location.';
   });
 
-  window.addEventListener('resize', drawStars);
-  drawStars();
+  window.addEventListener('resize', initStars);
+  initStars();
+  if (!reducedMotion) requestAnimationFrame(tickStars);
 
   // startup: URL params > saved location > ask
   const params = new URLSearchParams(location.search);
