@@ -264,25 +264,48 @@ body {
   width: 60%;
 }
 
-/* ---------- moon hero ---------- */
+/* ---------- map hero ---------- */
 
-.moon-hero {
-  margin-top: 8px;
+.map-hero {
+  margin-top: 30px;
+  padding: 14px 14px 12px;
+  text-align: left;
   animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-#moonCanvas {
-  width: min(340px, 72vw);
+.map-hero > canvas {
+  display: block;
+  width: 100%;
   height: auto;
-  animation: drift 14s ease-in-out infinite alternate;
+  border-radius: 12px;
 }
 
-.moon-caption h2 {
+.map-overlay {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px 8px 8px;
+  background: rgba(6, 9, 22, 0.55);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.map-overlay canvas {
+  width: 74px;
+  height: 74px;
+  animation: drift 10s ease-in-out infinite alternate;
+}
+
+.map-overlay h2 {
   font-family: var(--serif);
-  font-size: 2.3rem;
+  font-size: 1.5rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  margin-top: 2px;
   background: linear-gradient(180deg, #fdfaf2 20%, #d8ceb4 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -290,10 +313,17 @@ body {
   color: transparent;
 }
 
-.moon-caption p {
+.map-overlay p {
   color: var(--ink-dim);
-  margin-top: 8px;
-  font-size: 0.95rem;
+  margin-top: 3px;
+  font-size: 0.78rem;
+}
+
+.map-hero .sub {
+  padding: 12px 8px 4px;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
 }
 
 .location-line {
@@ -383,31 +413,6 @@ body {
   line-height: 1.45;
 }
 
-/* ---------- map ---------- */
-
-.map-card {
-  margin-top: 14px;
-  padding: 20px 22px 16px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
-}
-
-.map-card canvas {
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-  border: 1px solid rgba(163, 178, 224, 0.1);
-}
-
-.map-card .sub {
-  font-size: 0.84rem;
-  color: var(--ink-dim);
-  line-height: 1.5;
-}
-
 .footnote {
   margin-top: 30px;
   font-size: 0.78rem;
@@ -447,6 +452,24 @@ body {
 @media (max-width: 520px) {
   .app {
     padding-top: 36px;
+  }
+  .map-hero {
+    padding: 10px 10px 8px;
+  }
+  .map-overlay {
+    top: 20px;
+    left: 20px;
+    padding: 6px 14px 6px 6px;
+  }
+  .map-overlay canvas {
+    width: 48px;
+    height: 48px;
+  }
+  .map-overlay h2 {
+    font-size: 1.05rem;
+  }
+  .map-overlay p {
+    font-size: 0.68rem;
   }
   .grid {
     grid-template-columns: 1fr 1fr;

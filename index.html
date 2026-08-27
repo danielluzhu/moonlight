@@ -45,12 +45,17 @@
 
     <!-- Main content: hidden until location is known -->
     <section id="moonContent" class="hidden">
-      <div class="moon-hero">
-        <canvas id="moonCanvas" width="480" height="480"></canvas>
-        <div class="moon-caption">
-          <h2 id="phaseName">—</h2>
-          <p id="phaseDetail">—</p>
+      <div class="card map-hero">
+        <canvas id="mapCanvas" width="1440" height="720"></canvas>
+        <div class="map-overlay">
+          <canvas id="moonCanvas" width="200" height="200"></canvas>
+          <div class="map-overlay-text">
+            <h2 id="phaseName">—</h2>
+            <p id="phaseDetail">—</p>
+          </div>
         </div>
+        <p class="sub">The bright half of the world can see the moon right now.
+          The moon herself marks where she hangs directly overhead; the gold dot is you.</p>
       </div>
 
       <p class="location-line">
@@ -89,13 +94,6 @@
           <span class="value" id="nextFull">—</span>
           <span class="sub" id="nextNew">—</span>
         </div>
-      </div>
-
-      <div class="card map-card">
-        <span class="label">Who can see the moon right now</span>
-        <canvas id="mapCanvas" width="1440" height="720"></canvas>
-        <p class="sub">The bright region has the moon above the horizon.
-          🌙 marks where it is directly overhead; the gold dot is you.</p>
       </div>
 
       <p class="footnote" id="updatedAt"></p>

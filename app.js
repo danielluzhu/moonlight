@@ -159,6 +159,34 @@
       lctx.arc(px, py, pr * 0.85, Math.PI * 0.7, Math.PI * 1.6);
       lctx.stroke();
     }
+
+    // the moon's face — a storybook sleeper, drifted toward the sunlit side
+    const crescent = cosA > 0;
+    const faceCx = cx + (litRight ? 1 : -1) * r * (crescent ? 0.42 : 0.1);
+    const fs = r * (crescent ? 0.5 : 0.72);
+    lctx.strokeStyle = 'rgba(112, 86, 58, 0.48)';
+    lctx.lineWidth = Math.max(r * 0.045, 1.2);
+    lctx.lineCap = 'round';
+    for (const side of [-1, 1]) { // closed eyes, lashes resting
+      lctx.beginPath();
+      lctx.arc(faceCx + side * 0.3 * fs, cy - 0.18 * fs, 0.15 * fs,
+        Math.PI * 0.15, Math.PI * 0.85);
+      lctx.stroke();
+    }
+    lctx.beginPath(); // a small contented smile
+    lctx.arc(faceCx, cy + 0.24 * fs, 0.13 * fs, Math.PI * 0.2, Math.PI * 0.8);
+    lctx.stroke();
+    for (const side of [-1, 1]) { // rosy cheeks
+      const chx = faceCx + side * 0.54 * fs;
+      const chy = cy + 0.1 * fs;
+      const blush = lctx.createRadialGradient(chx, chy, 0, chx, chy, 0.15 * fs);
+      blush.addColorStop(0, 'rgba(224, 148, 128, 0.22)');
+      blush.addColorStop(1, 'rgba(224, 148, 128, 0)');
+      lctx.fillStyle = blush;
+      lctx.beginPath();
+      lctx.arc(chx, chy, 0.15 * fs, 0, Math.PI * 2);
+      lctx.fill();
+    }
     lctx.restore();
 
     // keep only the lit region, with the soft terminator edge
@@ -279,6 +307,21 @@
       }
     }
     ctx.fill();
+    // gilded coastlines
+    ctx.strokeStyle = 'rgba(222, 199, 149, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function drawSparkle(ctx, x, y, s, alpha) {
+    ctx.fillStyle = `rgba(245, 220, 160, ${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y - s);
+    ctx.quadraticCurveTo(x, y, x + s, y);
+    ctx.quadraticCurveTo(x, y, x, y + s);
+    ctx.quadraticCurveTo(x, y, x - s, y);
+    ctx.quadraticCurveTo(x, y, x, y - s);
+    ctx.fill();
   }
 
   function drawMap(lat, lon) {
@@ -295,9 +338,10 @@
     ctx.fillStyle = '#0d1330';
     ctx.fillRect(0, 0, w, h);
 
-    // graticule
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    // dotted gold graticule, like an old celestial chart
+    ctx.strokeStyle = 'rgba(245, 214, 152, 0.10)';
     ctx.lineWidth = 1;
+    ctx.setLineDash([3, 8]);
     for (let gl = -150; gl <= 150; gl += 30) {
       const [x] = project(0, gl, w, h);
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -306,6 +350,7 @@
       const [, y] = project(gl, 0, w, h);
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
+    ctx.setLineDash([]);
 
     drawLand(ctx, w, h);
 
@@ -341,19 +386,41 @@
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
 
-    // soft glow + moon marker at the sub-lunar point
+    // sparkles scattered through the moonlit half of the world
+    const SPARKS = [
+      [-30, -40, 5], [22, -55, 4], [8, 48, 6], [-18, 30, 4], [35, 15, 5],
+      [-5, -70, 4], [28, 60, 5], [-38, 10, 4], [15, -22, 3], [-25, 65, 5],
+      [42, -32, 4], [2, 26, 3], [-12, -12, 3], [48, 40, 4],
+    ];
+    SPARKS.forEach(([dlat, dlon, size], i) => {
+      const slat = sub.lat + dlat;
+      if (slat > 82 || slat < -82) return;
+      let slon = sub.lon + dlon;
+      slon = ((slon + 540) % 360) - 180;
+      const cosc = sinLat1 * Math.sin(slat * rad) +
+        cosLat1 * Math.cos(slat * rad) * Math.cos((slon - sub.lon) * rad);
+      if (cosc < 0.08) return;
+      const [sx, sy] = project(slat, slon, w, h);
+      drawSparkle(ctx, sx, sy, size, 0.28 + (i % 3) * 0.12);
+    });
+
+    // the moon herself — tonight's face — at the sub-lunar point
     const [mx, my] = project(sub.lat, sub.lon, w, h);
-    const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 60);
-    glow.addColorStop(0, 'rgba(255, 233, 170, 0.35)');
+    const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 78);
+    glow.addColorStop(0, 'rgba(255, 233, 170, 0.30)');
     glow.addColorStop(1, 'rgba(255, 233, 170, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(mx, my, 60, 0, Math.PI * 2);
+    ctx.arc(mx, my, 78, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = '36px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🌙', mx, my);
+    const marker = document.createElement('canvas');
+    marker.width = 300;
+    marker.height = 300;
+    drawMoon(marker, Astro.getMoonIllumination(now).phase, lat < 0);
+    ctx.drawImage(marker, mx - 62, my - 62, 124, 124);
+    drawSparkle(ctx, mx - 52, my - 44, 6, 0.6);
+    drawSparkle(ctx, mx + 55, my + 30, 4, 0.5);
+    drawSparkle(ctx, mx + 44, my - 54, 3, 0.45);
 
     // user marker: gold dot with a halo ring
     const [ux, uy] = project(lat, lon, w, h);
@@ -371,6 +438,14 @@
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
     ctx.lineWidth = 2;
     ctx.stroke();
+
+    // gilded double frame around the chart
+    ctx.strokeStyle = 'rgba(245, 214, 152, 0.26)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 10, w - 20, h - 20);
+    ctx.strokeStyle = 'rgba(245, 214, 152, 0.12)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(20.5, 20.5, w - 41, h - 41);
   }
 
   // ---------- data -> UI ----------

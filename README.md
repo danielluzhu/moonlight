@@ -9,15 +9,17 @@ location — no backend, no API keys, all astronomy computed in the browser.
 
 ## Features
 
-- **Phase** — a rendered moon disc with the correct illuminated shape, phase
-  name, illumination percentage, and days into the lunar cycle
+- **The map** — the main view: a storybook celestial chart of the world showing
+  the portion of Earth that can see the moon at this moment. The moon herself —
+  rendered with tonight's real phase and a gentle sleeping face — marks the
+  spot where she hangs directly overhead
+- **Phase** — the correct illuminated shape, phase name, illumination
+  percentage, and days into the lunar cycle
 - **Moonrise & moonset** — the next upcoming times, with the compass direction
   where the moon crosses the horizon
 - **Position now** — altitude above the horizon and which way to look
 - **Distance & angular size** — how far the moon is right now
 - **Next phases** — dates of the next full and new moon
-- **Global visibility map** — a world map showing the portion of Earth that can
-  see the moon at this moment, with the sub-lunar point marked
 
 ## Location
 
