@@ -9,11 +9,12 @@ location — no backend, no API keys, all astronomy computed in the browser.
 
 ## Features
 
-- **The map** — the main view: a storybook celestial chart of the world showing
-  the portion of Earth that can see the moon at this moment. The moon herself —
-  rendered with tonight's real phase and a gentle sleeping face — marks the
-  spot where she hangs directly overhead. Everything else lives behind a
-  "Moon details" toggle so the chart stays the whole story
+- **The map** — the entire page: a storybook celestial chart of the world,
+  floating in a twinkling starfield, showing the portion of Earth that can see
+  the moon at this moment. The moon herself — rendered with tonight's real
+  phase and a gentle sleeping face — marks the spot where she hangs directly
+  overhead. Everything else floats above the chart as a glass HUD, with the
+  numbers behind a "Moon details" toggle
 - **Phase** — the correct illuminated shape, phase name, illumination
   percentage, and days into the lunar cycle
 - **Moonrise & moonset** — the next upcoming times, with the compass direction

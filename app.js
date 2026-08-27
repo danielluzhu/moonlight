@@ -324,17 +324,50 @@
     ctx.fill();
   }
 
+  function pathRoundRect(ctx, x, y, w, h, r) {
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+    else ctx.rect(x, y, w, h);
+  }
+
   function drawMap(lat, lon) {
     const canvas = $('mapCanvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const w = 1440; // logical chart size, 2:1 equirectangular
+    const h = 720;
     const now = new Date();
     const sub = Astro.getSubLunarPoint(now);
 
+    // fit the chart within the viewport; the starry sky fills the rest
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+    const scale = Math.min(cw / w, ch / h);
+    const mw = w * scale;
+    const mh = h * scale;
+    const ox = (cw - mw) / 2;
+    const oy = (ch - mh) / 2;
+    const corner = Math.min(26 * scale, 26);
+
+    // soft aura so the chart floats in space
+    ctx.save();
+    ctx.beginPath();
+    pathRoundRect(ctx, ox, oy, mw, mh, corner);
+    ctx.shadowColor = 'rgba(150, 172, 255, 0.25)';
+    ctx.shadowBlur = Math.max(90 * scale, 40);
+    ctx.fillStyle = '#0d1330';
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    pathRoundRect(ctx, ox, oy, mw, mh, corner);
+    ctx.clip();
+    ctx.translate(ox, oy);
+    ctx.scale(scale, scale);
+
     // ocean
-    ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#0d1330';
     ctx.fillRect(0, 0, w, h);
 
@@ -441,8 +474,10 @@
 
     // slim gilded frame, hugging the edge so no geography is covered
     ctx.strokeStyle = 'rgba(245, 214, 152, 0.24)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(3, 3, w - 6, h - 6);
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(2, 2, w - 4, h - 4);
+
+    ctx.restore();
   }
 
   // ---------- data -> UI ----------
@@ -650,8 +685,20 @@
     $('gateMessage').textContent = 'To show tonight’s moon, Moonlight needs your location.';
   });
 
-  window.addEventListener('resize', initStars);
+  function sizeMap() {
+    const canvas = $('mapCanvas');
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(window.innerWidth * dpr);
+    canvas.height = Math.round(window.innerHeight * dpr);
+    if (lastLoc) drawMap(lastLoc.lat, lastLoc.lon);
+  }
+
+  window.addEventListener('resize', () => {
+    initStars();
+    sizeMap();
+  });
   initStars();
+  sizeMap();
   if (!reducedMotion) requestAnimationFrame(tickStars);
 
   // startup: URL params > saved location > ask

@@ -13,10 +13,12 @@
 </head>
 <body>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <canvas id="mapCanvas" width="1440" height="720"
+    aria-label="World map showing where the moon is visible right now"></canvas>
   <div class="vignette" aria-hidden="true"></div>
 
-  <main class="app">
-    <header class="header">
+  <main class="hud">
+    <header class="hud-top">
       <h1>Moonlight</h1>
       <p class="tagline">Tonight's moon, from where you stand</p>
     </header>
@@ -43,64 +45,58 @@
       </details>
     </section>
 
-    <!-- Main content: hidden until location is known -->
+    <!-- HUD content: hidden until location is known -->
     <section id="moonContent" class="hidden">
-      <div class="card map-hero">
-        <canvas id="mapCanvas" width="1440" height="720"></canvas>
-        <div class="map-caption">
+      <div id="detailsPanel" class="card details hidden">
+        <div class="grid">
+          <div class="stat">
+            <span class="label">Illumination</span>
+            <span class="value" id="illumination">—</span>
+            <span class="sub" id="moonAge">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Moonrise</span>
+            <span class="value" id="moonrise">—</span>
+            <span class="sub" id="moonriseDir">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Moonset</span>
+            <span class="value" id="moonset">—</span>
+            <span class="sub" id="moonsetDir">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Position now</span>
+            <span class="value" id="position">—</span>
+            <span class="sub" id="positionDetail">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Distance</span>
+            <span class="value" id="distance">—</span>
+            <span class="sub" id="angularSize">—</span>
+          </div>
+          <div class="stat">
+            <span class="label">Next phases</span>
+            <span class="value" id="nextFull">—</span>
+            <span class="sub" id="nextNew">—</span>
+          </div>
+        </div>
+        <p class="footnote" id="updatedAt"></p>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="chip phase-chip">
           <canvas id="moonCanvas" width="200" height="200"></canvas>
-          <div class="map-caption-text">
+          <div class="phase-text">
             <h2 id="phaseName">—</h2>
             <p id="phaseDetail">—</p>
           </div>
-          <p class="location-line">
-            <span id="placeName">—</span>
-            <button id="changeLocation" class="link-btn" type="button">change</button>
-          </p>
         </div>
-      </div>
-
-      <p class="hint">The bright half of the world can see the moon right now.
-        She marks where she hangs directly overhead; the gold dot is you.</p>
-
-      <button id="detailsToggle" class="details-toggle" type="button" aria-expanded="false"
-        aria-controls="detailsPanel">Moon details ▾</button>
-
-      <div id="detailsPanel" class="details hidden">
-      <div class="grid">
-        <div class="card stat">
-          <span class="label">Illumination</span>
-          <span class="value" id="illumination">—</span>
-          <span class="sub" id="moonAge">—</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Moonrise</span>
-          <span class="value" id="moonrise">—</span>
-          <span class="sub" id="moonriseDir">—</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Moonset</span>
-          <span class="value" id="moonset">—</span>
-          <span class="sub" id="moonsetDir">—</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Position now</span>
-          <span class="value" id="position">—</span>
-          <span class="sub" id="positionDetail">—</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Distance</span>
-          <span class="value" id="distance">—</span>
-          <span class="sub" id="angularSize">—</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Next phases</span>
-          <span class="value" id="nextFull">—</span>
-          <span class="sub" id="nextNew">—</span>
-        </div>
-      </div>
-
-      <p class="footnote" id="updatedAt"></p>
+        <button id="detailsToggle" class="details-toggle" type="button"
+          aria-expanded="false" aria-controls="detailsPanel">Moon details ▾</button>
+        <p class="chip location-chip">
+          <span id="placeName">—</span>
+          <button id="changeLocation" class="link-btn" type="button">change</button>
+        </p>
       </div>
     </section>
   </main>
