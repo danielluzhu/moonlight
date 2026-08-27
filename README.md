@@ -12,7 +12,8 @@ location — no backend, no API keys, all astronomy computed in the browser.
 - **The map** — the main view: a storybook celestial chart of the world showing
   the portion of Earth that can see the moon at this moment. The moon herself —
   rendered with tonight's real phase and a gentle sleeping face — marks the
-  spot where she hangs directly overhead
+  spot where she hangs directly overhead. Everything else lives behind a
+  "Moon details" toggle so the chart stays the whole story
 - **Phase** — the correct illuminated shape, phase name, illumination
   percentage, and days into the lunar cycle
 - **Moonrise & moonset** — the next upcoming times, with the compass direction

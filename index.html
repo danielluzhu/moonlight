@@ -47,22 +47,26 @@
     <section id="moonContent" class="hidden">
       <div class="card map-hero">
         <canvas id="mapCanvas" width="1440" height="720"></canvas>
-        <div class="map-overlay">
+        <div class="map-caption">
           <canvas id="moonCanvas" width="200" height="200"></canvas>
-          <div class="map-overlay-text">
+          <div class="map-caption-text">
             <h2 id="phaseName">—</h2>
             <p id="phaseDetail">—</p>
           </div>
+          <p class="location-line">
+            <span id="placeName">—</span>
+            <button id="changeLocation" class="link-btn" type="button">change</button>
+          </p>
         </div>
-        <p class="sub">The bright half of the world can see the moon right now.
-          The moon herself marks where she hangs directly overhead; the gold dot is you.</p>
       </div>
 
-      <p class="location-line">
-        <span id="placeName">—</span>
-        <button id="changeLocation" class="link-btn" type="button">change</button>
-      </p>
+      <p class="hint">The bright half of the world can see the moon right now.
+        She marks where she hangs directly overhead; the gold dot is you.</p>
 
+      <button id="detailsToggle" class="details-toggle" type="button" aria-expanded="false"
+        aria-controls="detailsPanel">Moon details ▾</button>
+
+      <div id="detailsPanel" class="details hidden">
       <div class="grid">
         <div class="card stat">
           <span class="label">Illumination</span>
@@ -97,6 +101,7 @@
       </div>
 
       <p class="footnote" id="updatedAt"></p>
+      </div>
     </section>
   </main>
 

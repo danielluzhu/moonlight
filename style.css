@@ -55,9 +55,9 @@ body {
 .app {
   position: relative;
   z-index: 1;
-  max-width: 880px;
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 56px 24px 72px;
+  padding: 48px 20px 72px;
   text-align: center;
 }
 
@@ -280,28 +280,25 @@ body {
   border-radius: 12px;
 }
 
-.map-overlay {
-  position: absolute;
-  top: 30px;
-  left: 30px;
+.map-caption {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 20px 8px 8px;
-  background: rgba(6, 9, 22, 0.55);
-  border: 1px solid var(--card-border);
-  border-radius: 18px;
-  backdrop-filter: blur(8px);
-  pointer-events: none;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 12px 4px;
 }
 
-.map-overlay canvas {
-  width: 74px;
-  height: 74px;
+.map-caption canvas {
+  width: 58px;
+  height: 58px;
   animation: drift 10s ease-in-out infinite alternate;
 }
 
-.map-overlay h2 {
+.map-caption-text {
+  text-align: left;
+}
+
+.map-caption h2 {
   font-family: var(--serif);
   font-size: 1.5rem;
   font-weight: 500;
@@ -313,17 +310,50 @@ body {
   color: transparent;
 }
 
-.map-overlay p {
+.map-caption p {
   color: var(--ink-dim);
-  margin-top: 3px;
-  font-size: 0.78rem;
+  margin-top: 2px;
+  font-size: 0.8rem;
 }
 
-.map-hero .sub {
-  padding: 12px 8px 4px;
+.map-caption .location-line {
+  margin: 0 0 0 auto;
+}
+
+.hint {
+  margin: 16px auto 0;
+  max-width: 640px;
   font-size: 0.85rem;
   color: var(--ink-dim);
   line-height: 1.5;
+}
+
+/* ---------- details expander ---------- */
+
+.details-toggle {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: rgba(214, 224, 255, 0.07);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 11px 26px;
+  margin-top: 22px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.details-toggle:hover {
+  background: rgba(214, 224, 255, 0.12);
+  border-color: var(--card-border-bright);
+  transform: translateY(-1px);
+}
+
+.details {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .location-line {
@@ -456,20 +486,15 @@ body {
   .map-hero {
     padding: 10px 10px 8px;
   }
-  .map-overlay {
-    top: 20px;
-    left: 20px;
-    padding: 6px 14px 6px 6px;
+  .map-caption canvas {
+    width: 44px;
+    height: 44px;
   }
-  .map-overlay canvas {
-    width: 48px;
-    height: 48px;
+  .map-caption h2 {
+    font-size: 1.15rem;
   }
-  .map-overlay h2 {
-    font-size: 1.05rem;
-  }
-  .map-overlay p {
-    font-size: 0.68rem;
+  .map-caption .location-line {
+    margin: 6px auto 0;
   }
   .grid {
     grid-template-columns: 1fr 1fr;

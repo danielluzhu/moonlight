@@ -439,13 +439,10 @@
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // gilded double frame around the chart
-    ctx.strokeStyle = 'rgba(245, 214, 152, 0.26)';
+    // slim gilded frame, hugging the edge so no geography is covered
+    ctx.strokeStyle = 'rgba(245, 214, 152, 0.24)';
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, w - 20, h - 20);
-    ctx.strokeStyle = 'rgba(245, 214, 152, 0.12)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(20.5, 20.5, w - 41, h - 41);
+    ctx.strokeRect(3, 3, w - 6, h - 6);
   }
 
   // ---------- data -> UI ----------
@@ -604,6 +601,14 @@
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
     );
   }
+
+  $('detailsToggle').addEventListener('click', () => {
+    const panel = $('detailsPanel');
+    const open = !panel.classList.toggle('hidden');
+    const toggle = $('detailsToggle');
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.textContent = open ? 'Hide details ▴' : 'Moon details ▾';
+  });
 
   $('useLocationBtn').addEventListener('click', requestGeolocation);
 
