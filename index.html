@@ -20,6 +20,14 @@
     <section id="locationGate" class="card gate">
       <p id="gateMessage">To show tonight's moon, Moonlight needs your location.</p>
       <button id="useLocationBtn" class="btn">Use my location</button>
+      <div class="divider">or</div>
+      <form id="zipForm" class="zip-form">
+        <input id="zipInput" inputmode="numeric" autocomplete="postal-code"
+               pattern="\d{5}" maxlength="5" placeholder="ZIP code" required
+               aria-label="ZIP code" />
+        <button type="submit" class="btn btn-secondary">Go</button>
+      </form>
+      <p id="zipError" class="zip-error hidden"></p>
       <details class="manual">
         <summary>Enter coordinates manually</summary>
         <form id="manualForm">

@@ -238,19 +238,38 @@
     return `${lat.toFixed(3)}°, ${lon.toFixed(3)}°`;
   }
 
+  // ZIP code -> coordinates via the free Zippopotam.us API (US ZIP codes)
+  async function lookupZip(zip) {
+    const res = await fetch(`https://api.zippopotam.us/us/${encodeURIComponent(zip)}`);
+    if (!res.ok) throw new Error('ZIP not found');
+    const data = await res.json();
+    const p = data.places && data.places[0];
+    if (!p) throw new Error('ZIP not found');
+    return {
+      lat: parseFloat(p.latitude),
+      lon: parseFloat(p.longitude),
+      name: `${p['place name']}, ${p['state abbreviation'] || p.state}`,
+    };
+  }
+
   // ---------- location flow ----------
 
   let refreshTimer = null;
 
-  function start(lat, lon) {
+  function start(lat, lon, placeName) {
     $('locationGate').classList.add('hidden');
     $('moonContent').classList.remove('hidden');
     render(lat, lon);
-    lookupPlaceName(lat, lon).then((name) => {
-      $('placeName').textContent = `📍 ${name}`;
-    });
+    if (placeName) {
+      $('placeName').textContent = `📍 ${placeName}`;
+    } else {
+      lookupPlaceName(lat, lon).then((name) => {
+        $('placeName').textContent = `📍 ${name}`;
+      });
+    }
     try {
-      localStorage.setItem('moonlight-location', JSON.stringify({ lat, lon }));
+      localStorage.setItem('moonlight-location',
+        JSON.stringify({ lat, lon, name: placeName || null }));
     } catch (err) { /* private mode */ }
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(() => render(lat, lon), 60000);
@@ -276,6 +295,29 @@
   }
 
   $('useLocationBtn').addEventListener('click', requestGeolocation);
+
+  $('zipForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const zip = $('zipInput').value.trim();
+    const errEl = $('zipError');
+    errEl.classList.add('hidden');
+    if (!/^\d{5}$/.test(zip)) {
+      errEl.textContent = 'Please enter a 5-digit US ZIP code.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    const btn = ev.target.querySelector('button');
+    btn.disabled = true;
+    try {
+      const loc = await lookupZip(zip);
+      start(loc.lat, loc.lon, loc.name);
+    } catch (err) {
+      errEl.textContent = `Couldn't find ZIP code ${zip} — check it and try again.`;
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   $('manualForm').addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -305,7 +347,7 @@
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem('moonlight-location')); } catch (err) { /* ignore */ }
     if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lon)) {
-      start(saved.lat, saved.lon);
+      start(saved.lat, saved.lon, saved.name || undefined);
     }
   }
 })();

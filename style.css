@@ -98,6 +98,63 @@ body {
   box-shadow: 0 6px 24px rgba(255, 217, 138, 0.25);
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--card-border);
+}
+
+.zip-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.zip-form input {
+  font: inherit;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 10px 18px;
+  width: 150px;
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+
+.zip-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 6px 24px rgba(255, 255, 255, 0.12);
+}
+
+.zip-error {
+  margin-top: 12px;
+  color: #ff9d9d;
+  font-size: 0.85rem;
+}
+
 .manual {
   margin-top: 22px;
   color: var(--ink-dim);
