@@ -1,0 +1,229 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-top: #070b1a;
+  --bg-bottom: #101833;
+  --ink: #e9edf8;
+  --ink-dim: #9aa4c4;
+  --card: rgba(255, 255, 255, 0.055);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --accent: #ffd98a;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%) fixed;
+  min-height: 100vh;
+}
+
+#stars {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tagline {
+  color: var(--ink-dim);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* location gate */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+}
+
+.gate {
+  margin: 64px auto 0;
+  max-width: 420px;
+  padding: 32px 28px;
+}
+
+.gate p {
+  color: var(--ink-dim);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  color: #14182b;
+  background: var(--accent);
+  border: none;
+  border-radius: 999px;
+  padding: 12px 26px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(255, 217, 138, 0.25);
+}
+
+.manual {
+  margin-top: 22px;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+
+.manual summary {
+  cursor: pointer;
+}
+
+.manual form {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.manual label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.manual input {
+  font: inherit;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 60%;
+}
+
+/* moon hero */
+
+.moon-hero {
+  margin-top: 20px;
+}
+
+#moonCanvas {
+  width: min(320px, 70vw);
+  height: auto;
+}
+
+.moon-caption h2 {
+  font-size: 1.7rem;
+  font-weight: 650;
+  margin-top: 4px;
+}
+
+.moon-caption p {
+  color: var(--ink-dim);
+  margin-top: 6px;
+}
+
+.location-line {
+  margin-top: 18px;
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+}
+
+.link-btn {
+  font: inherit;
+  font-size: 0.85em;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* stat grid */
+
+.grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  text-align: left;
+}
+
+.stat {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat .label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.stat .value {
+  font-size: 1.35rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .sub {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.footnote {
+  margin-top: 26px;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  opacity: 0.8;
+}
+
+@media (max-width: 520px) {
+  .app {
+    padding-top: 32px;
+  }
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat .value {
+    font-size: 1.1rem;
+  }
+}

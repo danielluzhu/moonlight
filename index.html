@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moonlight — Tonight's Moon</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <main class="app">
+    <header class="header">
+      <h1>Moonlight</h1>
+      <p class="tagline">Tonight's moon, from where you stand</p>
+    </header>
+
+    <!-- Location gate: shown until we have coordinates -->
+    <section id="locationGate" class="card gate">
+      <p id="gateMessage">To show tonight's moon, Moonlight needs your location.</p>
+      <button id="useLocationBtn" class="btn">Use my location</button>
+      <details class="manual">
+        <summary>Enter coordinates manually</summary>
+        <form id="manualForm">
+          <label>Latitude <input id="latInput" type="number" step="any" min="-90" max="90" placeholder="37.77" required /></label>
+          <label>Longitude <input id="lonInput" type="number" step="any" min="-180" max="180" placeholder="-122.42" required /></label>
+          <button type="submit" class="btn">Show my moon</button>
+        </form>
+      </details>
+    </section>
+
+    <!-- Main content: hidden until location is known -->
+    <section id="moonContent" class="hidden">
+      <div class="moon-hero">
+        <canvas id="moonCanvas" width="480" height="480"></canvas>
+        <div class="moon-caption">
+          <h2 id="phaseName">—</h2>
+          <p id="phaseDetail">—</p>
+        </div>
+      </div>
+
+      <p class="location-line">
+        <span id="placeName">—</span>
+        <button id="changeLocation" class="link-btn" type="button">change</button>
+      </p>
+
+      <div class="grid">
+        <div class="card stat">
+          <span class="label">Illumination</span>
+          <span class="value" id="illumination">—</span>
+          <span class="sub" id="moonAge">—</span>
+        </div>
+        <div class="card stat">
+          <span class="label">Moonrise</span>
+          <span class="value" id="moonrise">—</span>
+          <span class="sub" id="moonriseDir">—</span>
+        </div>
+        <div class="card stat">
+          <span class="label">Moonset</span>
+          <span class="value" id="moonset">—</span>
+          <span class="sub" id="moonsetDir">—</span>
+        </div>
+        <div class="card stat">
+          <span class="label">Position now</span>
+          <span class="value" id="position">—</span>
+          <span class="sub" id="positionDetail">—</span>
+        </div>
+        <div class="card stat">
+          <span class="label">Distance</span>
+          <span class="value" id="distance">—</span>
+          <span class="sub" id="angularSize">—</span>
+        </div>
+        <div class="card stat">
+          <span class="label">Next phases</span>
+          <span class="value" id="nextFull">—</span>
+          <span class="sub" id="nextNew">—</span>
+        </div>
+      </div>
+
+      <p class="footnote" id="updatedAt"></p>
+    </section>
+  </main>
+
+  <script src="astro.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
