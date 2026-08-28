@@ -243,6 +243,9 @@
     if (reducedMotion) paintStars(0);
   }
 
+  let meteors = [];
+  let nextMeteorAt = 7000;
+
   function paintStars(t) {
     const canvas = $('stars');
     const ctx = canvas.getContext('2d');
@@ -255,6 +258,41 @@
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // every so often, a wish
+    if (!reducedMotion) {
+      if (t > nextMeteorAt) {
+        nextMeteorAt = t + 16000 + Math.random() * 24000;
+        const angle = Math.PI * (0.12 + Math.random() * 0.2);
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        meteors.push({
+          x: window.innerWidth * (0.1 + Math.random() * 0.8),
+          y: window.innerHeight * Math.random() * 0.35,
+          vx: dir * Math.cos(angle) * 0.85,
+          vy: Math.sin(angle) * 0.85,
+          born: t,
+          life: 1100,
+        });
+      }
+      meteors = meteors.filter((m) => t - m.born < m.life);
+      for (const m of meteors) {
+        const age = t - m.born;
+        const fade = Math.sin((1 - age / m.life) * Math.PI * 0.5);
+        const x = m.x + m.vx * age;
+        const y = m.y + m.vy * age;
+        const tail = 110;
+        const grad = ctx.createLinearGradient(x, y, x - m.vx * tail, y - m.vy * tail);
+        grad.addColorStop(0, `rgba(255, 246, 220, ${0.8 * fade})`);
+        grad.addColorStop(1, 'rgba(255, 246, 220, 0)');
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - m.vx * tail, y - m.vy * tail);
+        ctx.stroke();
+      }
     }
   }
 
@@ -387,8 +425,8 @@
 
     drawLand(ctx, w, h);
 
-    // shade the hemisphere that cannot see the moon:
-    // visible where the great-circle distance to the sub-lunar point < 90°
+    // moonlight falling across the world: a continuous silver-gold wash,
+    // brightest directly beneath her, melting into soft night past the horizon
     const shade = document.createElement('canvas');
     const sw = 360;
     const sh = 180;
@@ -406,18 +444,34 @@
         const lam = (((px + 0.5) / sw) * 360 - 180) * rad;
         const cosc = sinLat1 * sinPhi +
           cosLat1 * cosPhi * Math.cos(lam - sub.lon * rad);
-        if (cosc < 0) {
-          const idx = (py * sw + px) * 4;
-          img.data[idx] = 2;
-          img.data[idx + 1] = 3;
-          img.data[idx + 2] = 14;
-          img.data[idx + 3] = 165; // translucent night shadow
+        const idx = (py * sw + px) * 4;
+        if (cosc > 0) {
+          const glow = Math.pow(cosc, 0.75);
+          img.data[idx] = 210 + 32 * glow;
+          img.data[idx + 1] = 216 + 22 * glow;
+          img.data[idx + 2] = 255 - 34 * glow; // warms toward gold at the zenith
+          img.data[idx + 3] = 50 * glow;
+        } else {
+          const night = Math.pow(Math.min(1, -cosc * 1.7), 0.9);
+          img.data[idx] = 4;
+          img.data[idx + 1] = 5;
+          img.data[idx + 2] = 18;
+          img.data[idx + 3] = 190 * night;
         }
       }
     }
     sctx.putImageData(img, 0, 0);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
+
+    // moonglade — a pool of light directly beneath her
+    const [gx, gy] = project(sub.lat, sub.lon, w, h);
+    const glade = ctx.createRadialGradient(gx, gy, 0, gx, gy, 250);
+    glade.addColorStop(0, 'rgba(246, 233, 200, 0.15)');
+    glade.addColorStop(0.5, 'rgba(222, 222, 252, 0.06)');
+    glade.addColorStop(1, 'rgba(222, 222, 252, 0)');
+    ctx.fillStyle = glade;
+    ctx.fillRect(gx - 250, gy - 250, 500, 500);
 
     // sparkles scattered through the moonlit half of the world
     const SPARKS = [
@@ -478,6 +532,15 @@
     ctx.strokeRect(2, 2, w - 4, h - 4);
 
     ctx.restore();
+
+    // park the breathing aura over her, in page coordinates
+    const aura = $('moonAura');
+    if (aura) {
+      const dpr = cw / window.innerWidth;
+      aura.style.left = `${(ox + mx * scale) / dpr}px`;
+      aura.style.top = `${(oy + my * scale) / dpr}px`;
+      aura.classList.remove('hidden');
+    }
   }
 
   // ---------- data -> UI ----------
@@ -602,12 +665,13 @@
   function start(lat, lon, placeName) {
     $('locationGate').classList.add('hidden');
     $('moonContent').classList.remove('hidden');
+    document.body.classList.add('located');
     render(lat, lon);
     if (placeName) {
-      $('placeName').textContent = `📍 ${placeName}`;
+      $('placeName').textContent = placeName;
     } else {
       lookupPlaceName(lat, lon).then((name) => {
-        $('placeName').textContent = `📍 ${name}`;
+        $('placeName').textContent = name;
       });
     }
     try {
@@ -681,6 +745,8 @@
     if (refreshTimer) clearInterval(refreshTimer);
     try { localStorage.removeItem('moonlight-location'); } catch (err) { /* ignore */ }
     $('moonContent').classList.add('hidden');
+    $('moonAura').classList.add('hidden');
+    document.body.classList.remove('located');
     $('locationGate').classList.remove('hidden');
     $('gateMessage').textContent = 'To show tonight’s moon, Moonlight needs your location.';
   });

@@ -16,6 +16,8 @@
   <canvas id="mapCanvas" width="1440" height="720"
     aria-label="World map showing where the moon is visible right now"></canvas>
   <div class="vignette" aria-hidden="true"></div>
+  <div id="moonAura" class="hidden" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
 
   <main class="hud">
     <header class="hud-top">
@@ -87,6 +89,7 @@
         <div class="chip phase-chip">
           <canvas id="moonCanvas" width="200" height="200"></canvas>
           <div class="phase-text">
+            <span class="phase-eyebrow">Tonight</span>
             <h2 id="phaseName">—</h2>
             <p id="phaseDetail">—</p>
           </div>
