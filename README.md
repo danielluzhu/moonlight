@@ -9,12 +9,13 @@ location — no backend, no API keys, all astronomy computed in the browser.
 
 ## Features
 
-- **The map** — the entire page: a photoreal night Earth (NASA Blue Marble
-  imagery cast into moonlight), floating in a twinkling starfield, showing the
-  portion of the world that can see the moon at this moment. City lights (NASA
-  Black Marble) glow gold — but only in the cities that can see her right now;
-  the rest of the world holds its breath in the dark. The moon herself —
-  rendered with tonight's real phase and a gentle sleeping face — marks the
+- **The map** — the entire page: a photoreal night Earth in black and light
+  (NASA Blue Marble imagery drained to monochrome), floating in a twinkling
+  starfield, showing the portion of the world that can see the moon at this
+  moment. City lights (NASA Black Marble) glow gold — but only in the cities
+  that can see her right now; the rest of the world dims into the dark without
+  ever disappearing. The moon herself — her real cratered face, sphere-mapped
+  from a lunar surface photo and shaded to tonight's exact phase — marks the
   spot where she hangs directly overhead. Everything else floats above the
   chart as a glass HUD, with the numbers behind a "Moon details" toggle
 - **Phase** — the correct illuminated shape, phase name, illumination

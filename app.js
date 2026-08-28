@@ -101,7 +101,38 @@
     softCtx.filter = `blur(${Math.max(w / 90, 3)}px)`;
     softCtx.drawImage(mask, 0, 0);
 
-    // sun-lit surface texture
+    // the real moon: NASA-derived surface photo, sphere-mapped and phase-masked
+    if (moonTexData) {
+      const sphere = renderMoonSphere(w, h, cx, cy, r, southernHemisphere);
+      const litReal = document.createElement('canvas');
+      litReal.width = w;
+      litReal.height = h;
+      const lrctx = litReal.getContext('2d');
+      lrctx.drawImage(sphere, 0, 0);
+      lrctx.globalCompositeOperation = 'destination-in';
+      lrctx.drawImage(soft, 0, 0);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.filter = 'brightness(0.3)';
+      ctx.drawImage(sphere, 0, 0); // earthshine: the dark side barely there
+      ctx.filter = 'none';
+      ctx.fillStyle = 'rgba(74, 86, 132, 0.15)';
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      ctx.drawImage(litReal, 0, 0);
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(226, 233, 255, 0.14)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      return;
+    }
+
+    // painted fallback while the photo loads: sun-lit surface texture
     const lit = document.createElement('canvas');
     lit.width = w;
     lit.height = h;
@@ -311,23 +342,78 @@
   // the photoreal earth, Black Marble for the city lights at night
   let earthTex = null;
   let lightsTex = null;
+  let moonTexData = null; // sampled pixels of the lunar surface, for sphere mapping
   let texturesRequested = false;
   const TEX_BASE = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/';
+  const MOON_TEX = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r152/examples/textures/planets/moon_1024.jpg';
 
   function loadTextures() {
     if (texturesRequested) return;
     texturesRequested = true;
-    const load = (file, assign) => {
+    const load = (url, assign) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         assign(img);
-        if (lastLoc) drawMap(lastLoc.lat, lastLoc.lon);
+        if (lastLoc) {
+          drawMap(lastLoc.lat, lastLoc.lon);
+          const illum = Astro.getMoonIllumination(new Date());
+          drawMoon($('moonCanvas'), illum.phase, lastLoc.lat < 0);
+        }
       };
-      img.src = TEX_BASE + file;
+      img.src = url;
     };
-    load('earth-blue-marble.jpg', (img) => { earthTex = img; });
-    load('earth-night.jpg', (img) => { lightsTex = img; });
+    load(TEX_BASE + 'earth-blue-marble.jpg', (img) => { earthTex = img; });
+    load(TEX_BASE + 'earth-night.jpg', (img) => { lightsTex = img; });
+    load(MOON_TEX, (img) => {
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const tctx = c.getContext('2d');
+      tctx.drawImage(img, 0, 0);
+      moonTexData = {
+        px: tctx.getImageData(0, 0, img.width, img.height).data,
+        tw: img.width,
+        th: img.height,
+      };
+    });
+  }
+
+  // orthographic render of the moon's near side from the equirectangular texture
+  function renderMoonSphere(w, h, cx, cy, r, southern) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ictx = c.getContext('2d');
+    const out = ictx.createImageData(w, h);
+    const { px, tw, th } = moonTexData;
+    const y0 = Math.max(0, Math.floor(cy - r));
+    const y1 = Math.min(h, Math.ceil(cy + r));
+    const x0 = Math.max(0, Math.floor(cx - r));
+    const x1 = Math.min(w, Math.ceil(cx + r));
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        let nx = (x - cx) / r;
+        let ny = (y - cy) / r;
+        if (southern) { nx = -nx; ny = -ny; } // she hangs upside-down down south
+        const d2 = nx * nx + ny * ny;
+        if (d2 > 1) continue;
+        const dist = Math.sqrt(d2);
+        const nz = Math.sqrt(Math.max(0, 1 - d2));
+        const u = 0.5 + Math.atan2(nx, nz) / (Math.PI * 2);
+        const v = 0.5 + Math.asin(ny) / Math.PI;
+        const ti = (Math.min(th - 1, Math.floor(v * th)) * tw +
+          Math.min(tw - 1, Math.floor(u * tw))) * 4;
+        const limb = 0.72 + 0.28 * nz; // gentle limb darkening
+        const oi = ((y * w) + x) * 4;
+        out.data[oi] = Math.min(255, px[ti] * 1.38 * limb);
+        out.data[oi + 1] = Math.min(255, px[ti + 1] * 1.34 * limb);
+        out.data[oi + 2] = Math.min(255, px[ti + 2] * 1.24 * limb);
+        out.data[oi + 3] = 255 * Math.min(1, (1 - dist) * r * 1.5); // feathered rim
+      }
+    }
+    ictx.putImageData(out, 0, 0);
+    return c;
   }
 
   function loadWorld() {
@@ -429,16 +515,14 @@
     ctx.scale(scale, scale);
 
     // ocean
-    ctx.fillStyle = '#0d1330';
+    ctx.fillStyle = '#08090f';
     ctx.fillRect(0, 0, w, h);
 
-    // photoreal earth, cast into night: NASA Blue Marble under a cold tint
+    // photoreal earth in black and light: NASA Blue Marble, drained of color
     if (earthTex) {
+      ctx.filter = 'grayscale(1) brightness(0.52) contrast(1.1)';
       ctx.drawImage(earthTex, 0, 0, w, h);
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = '#42507c';
-      ctx.fillRect(0, 0, w, h);
-      ctx.globalCompositeOperation = 'source-over';
+      ctx.filter = 'none';
     } else {
       drawLand(ctx, w, h);
     }
@@ -485,20 +569,21 @@
         const idx = (py * sw + px) * 4;
         if (cosc > 0) {
           const glow = Math.pow(cosc, 0.75);
-          img.data[idx] = 210 + 32 * glow;
-          img.data[idx + 1] = 216 + 22 * glow;
-          img.data[idx + 2] = 255 - 34 * glow; // warms toward gold at the zenith
-          img.data[idx + 3] = 38 * glow;
+          img.data[idx] = 216 + 32 * glow;
+          img.data[idx + 1] = 214 + 28 * glow;
+          img.data[idx + 2] = 206 + 16 * glow; // warm silver, gold at the zenith
+          img.data[idx + 3] = 40 * glow;
           vimg.data[idx] = 255;
           vimg.data[idx + 1] = 255;
           vimg.data[idx + 2] = 255;
           vimg.data[idx + 3] = 255 * Math.min(1, cosc * 4);
         } else {
-          const night = Math.pow(Math.min(1, -cosc * 2.1), 0.85);
-          img.data[idx] = 4;
-          img.data[idx + 1] = 5;
-          img.data[idx + 2] = 18;
-          img.data[idx + 3] = 216 * night;
+          // the far side dims but never disappears — the world is still there
+          const night = Math.pow(Math.min(1, -cosc * 2), 0.85);
+          img.data[idx] = 3;
+          img.data[idx + 1] = 3;
+          img.data[idx + 2] = 8;
+          img.data[idx + 3] = 150 * night;
         }
       }
     }
@@ -522,7 +607,14 @@
       lights.width = w;
       lights.height = h;
       const lightsCtx = lights.getContext('2d');
+      // crush the texture's faint haze so only true city light survives,
+      // then tint what remains gold — no blue can get through grayscale
+      lightsCtx.filter = 'grayscale(1) brightness(1.5) contrast(1.6)';
       lightsCtx.drawImage(lightsTex, 0, 0, w, h);
+      lightsCtx.filter = 'none';
+      lightsCtx.globalCompositeOperation = 'multiply';
+      lightsCtx.fillStyle = '#ffd9a0';
+      lightsCtx.fillRect(0, 0, w, h);
       lightsCtx.globalCompositeOperation = 'destination-in';
       lightsCtx.imageSmoothingEnabled = true;
       lightsCtx.drawImage(vis, 0, 0, w, h);
