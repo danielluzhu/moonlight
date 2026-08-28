@@ -57,9 +57,16 @@
 
     // atmospheric halo
     const halo = ctx.createRadialGradient(cx, cy, r * 0.7, cx, cy, r + 34);
-    halo.addColorStop(0, 'rgba(245, 224, 176, 0.16)');
-    halo.addColorStop(0.55, 'rgba(206, 218, 255, 0.06)');
-    halo.addColorStop(1, 'rgba(206, 218, 255, 0)');
+    if (moonTexData) {
+      // cold, faint — real moonlight, not a lantern
+      halo.addColorStop(0, 'rgba(226, 233, 250, 0.10)');
+      halo.addColorStop(0.55, 'rgba(215, 224, 250, 0.04)');
+      halo.addColorStop(1, 'rgba(215, 224, 250, 0)');
+    } else {
+      halo.addColorStop(0, 'rgba(245, 224, 176, 0.16)');
+      halo.addColorStop(0.55, 'rgba(206, 218, 255, 0.06)');
+      halo.addColorStop(1, 'rgba(206, 218, 255, 0)');
+    }
     ctx.fillStyle = halo;
     ctx.beginPath();
     ctx.arc(cx, cy, r + 34, 0, Math.PI * 2);
@@ -119,16 +126,11 @@
       ctx.filter = 'brightness(0.3)';
       ctx.drawImage(sphere, 0, 0); // earthshine: the dark side barely there
       ctx.filter = 'none';
-      ctx.fillStyle = 'rgba(74, 86, 132, 0.15)';
+      ctx.fillStyle = 'rgba(78, 86, 112, 0.12)';
       ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
       ctx.drawImage(litReal, 0, 0);
       ctx.restore();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(226, 233, 255, 0.14)';
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
+      // no rim stroke — the real moon wears no outline
       return;
     }
 
@@ -404,11 +406,13 @@
         const v = 0.5 + Math.asin(ny) / Math.PI;
         const ti = (Math.min(th - 1, Math.floor(v * th)) * tw +
           Math.min(tw - 1, Math.floor(u * tw))) * 4;
-        const limb = 0.72 + 0.28 * nz; // gentle limb darkening
+        const limb = 0.6 + 0.4 * nz; // limb darkening
         const oi = ((y * w) + x) * 4;
-        out.data[oi] = Math.min(255, px[ti] * 1.38 * limb);
-        out.data[oi + 1] = Math.min(255, px[ti + 1] * 1.34 * limb);
-        out.data[oi + 2] = Math.min(255, px[ti + 2] * 1.24 * limb);
+        // neutral gray through a contrast curve, so maria and highlands read
+        const val = Math.max(0, Math.min(255, (px[ti] * limb - 100) * 1.35 + 112));
+        out.data[oi] = Math.min(255, val * 1.02);
+        out.data[oi + 1] = val;
+        out.data[oi + 2] = Math.min(255, val * 0.97);
         out.data[oi + 3] = 255 * Math.min(1, (1 - dist) * r * 1.5); // feathered rim
       }
     }
@@ -650,8 +654,8 @@
     // the moon herself — tonight's face — at the sub-lunar point
     const [mx, my] = project(sub.lat, sub.lon, w, h);
     const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 78);
-    glow.addColorStop(0, 'rgba(255, 233, 170, 0.30)');
-    glow.addColorStop(1, 'rgba(255, 233, 170, 0)');
+    glow.addColorStop(0, 'rgba(228, 235, 255, 0.20)');
+    glow.addColorStop(1, 'rgba(228, 235, 255, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(mx, my, 78, 0, Math.PI * 2);
@@ -661,9 +665,6 @@
     marker.height = 300;
     drawMoon(marker, Astro.getMoonIllumination(now).phase, lat < 0);
     ctx.drawImage(marker, mx - 62, my - 62, 124, 124);
-    drawSparkle(ctx, mx - 52, my - 44, 6, 0.6);
-    drawSparkle(ctx, mx + 55, my + 30, 4, 0.5);
-    drawSparkle(ctx, mx + 44, my - 54, 3, 0.45);
 
     // user marker: gold dot with a halo ring
     const [ux, uy] = project(lat, lon, w, h);

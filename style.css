@@ -84,9 +84,9 @@ body.located #mapCanvas {
   border-radius: 50%;
   pointer-events: none;
   background: radial-gradient(circle,
-    rgba(246, 231, 190, 0.26) 0%,
-    rgba(226, 222, 255, 0.09) 45%,
-    rgba(226, 222, 255, 0) 70%);
+    rgba(232, 238, 252, 0.18) 0%,
+    rgba(226, 230, 250, 0.07) 45%,
+    rgba(226, 230, 250, 0) 70%);
   animation: breathe 6s ease-in-out infinite alternate;
 }
 
