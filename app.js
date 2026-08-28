@@ -307,6 +307,29 @@
   let worldGeoRequested = false;
   let lastLoc = null;
 
+  // NASA satellite imagery (mirrored on jsDelivr with CORS): Blue Marble for
+  // the photoreal earth, Black Marble for the city lights at night
+  let earthTex = null;
+  let lightsTex = null;
+  let texturesRequested = false;
+  const TEX_BASE = 'https://cdn.jsdelivr.net/npm/three-globe@2.31.0/example/img/';
+
+  function loadTextures() {
+    if (texturesRequested) return;
+    texturesRequested = true;
+    const load = (file, assign) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        assign(img);
+        if (lastLoc) drawMap(lastLoc.lat, lastLoc.lon);
+      };
+      img.src = TEX_BASE + file;
+    };
+    load('earth-blue-marble.jpg', (img) => { earthTex = img; });
+    load('earth-night.jpg', (img) => { lightsTex = img; });
+  }
+
   function loadWorld() {
     if (worldGeoRequested) return;
     worldGeoRequested = true;
@@ -409,8 +432,19 @@
     ctx.fillStyle = '#0d1330';
     ctx.fillRect(0, 0, w, h);
 
+    // photoreal earth, cast into night: NASA Blue Marble under a cold tint
+    if (earthTex) {
+      ctx.drawImage(earthTex, 0, 0, w, h);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = '#42507c';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      drawLand(ctx, w, h);
+    }
+
     // dotted gold graticule, like an old celestial chart
-    ctx.strokeStyle = 'rgba(245, 214, 152, 0.10)';
+    ctx.strokeStyle = 'rgba(245, 214, 152, 0.09)';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 8]);
     for (let gl = -150; gl <= 150; gl += 30) {
@@ -423,8 +457,6 @@
     }
     ctx.setLineDash([]);
 
-    drawLand(ctx, w, h);
-
     // moonlight falling across the world: a continuous silver-gold wash,
     // brightest directly beneath her, melting into soft night past the horizon
     const shade = document.createElement('canvas');
@@ -434,6 +466,12 @@
     shade.height = sh;
     const sctx = shade.getContext('2d');
     const img = sctx.createImageData(sw, sh);
+    // alpha mask of where the moon is up — gates the city lights
+    const vis = document.createElement('canvas');
+    vis.width = sw;
+    vis.height = sh;
+    const vctx = vis.getContext('2d');
+    const vimg = vctx.createImageData(sw, sh);
     const sinLat1 = Math.sin(sub.lat * rad);
     const cosLat1 = Math.cos(sub.lat * rad);
     for (let py = 0; py < sh; py++) {
@@ -450,17 +488,22 @@
           img.data[idx] = 210 + 32 * glow;
           img.data[idx + 1] = 216 + 22 * glow;
           img.data[idx + 2] = 255 - 34 * glow; // warms toward gold at the zenith
-          img.data[idx + 3] = 50 * glow;
+          img.data[idx + 3] = 38 * glow;
+          vimg.data[idx] = 255;
+          vimg.data[idx + 1] = 255;
+          vimg.data[idx + 2] = 255;
+          vimg.data[idx + 3] = 255 * Math.min(1, cosc * 4);
         } else {
-          const night = Math.pow(Math.min(1, -cosc * 1.7), 0.9);
+          const night = Math.pow(Math.min(1, -cosc * 2.1), 0.85);
           img.data[idx] = 4;
           img.data[idx + 1] = 5;
           img.data[idx + 2] = 18;
-          img.data[idx + 3] = 190 * night;
+          img.data[idx + 3] = 216 * night;
         }
       }
     }
     sctx.putImageData(img, 0, 0);
+    vctx.putImageData(vimg, 0, 0);
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(shade, 0, 0, w, h);
 
@@ -472,6 +515,27 @@
     glade.addColorStop(1, 'rgba(222, 222, 252, 0)');
     ctx.fillStyle = glade;
     ctx.fillRect(gx - 250, gy - 250, 500, 500);
+
+    // city lights — only the cities that can see her tonight
+    if (lightsTex) {
+      const lights = document.createElement('canvas');
+      lights.width = w;
+      lights.height = h;
+      const lightsCtx = lights.getContext('2d');
+      lightsCtx.drawImage(lightsTex, 0, 0, w, h);
+      lightsCtx.globalCompositeOperation = 'destination-in';
+      lightsCtx.imageSmoothingEnabled = true;
+      lightsCtx.drawImage(vis, 0, 0, w, h);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.filter = 'blur(6px)'; // bloom pass so the cities glow
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(lights, 0, 0);
+      ctx.filter = 'none';
+      ctx.globalAlpha = 1;
+      ctx.drawImage(lights, 0, 0);
+      ctx.drawImage(lights, 0, 0); // second pass makes the cities burn gold
+      ctx.globalCompositeOperation = 'source-over';
+    }
 
     // sparkles scattered through the moonlit half of the world
     const SPARKS = [
@@ -621,6 +685,7 @@
 
     lastLoc = { lat, lon };
     loadWorld();
+    loadTextures();
     drawMap(lat, lon);
 
     $('updatedAt').textContent =
