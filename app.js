@@ -248,6 +248,31 @@
     ctx.stroke();
   }
 
+  // ---------- favicon: tonight's real moon in the browser tab ----------
+
+  function updateFavicon() {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    const src = document.createElement('canvas');
+    src.width = 300;
+    src.height = 300;
+    const phase = Astro.getMoonIllumination(new Date()).phase;
+    drawMoon(src, phase, lastLoc ? lastLoc.lat < 0 : false);
+    // crop to the disc so the moon fills the icon
+    const r = 300 / 2 - 34;
+    const pad = 8;
+    const icon = document.createElement('canvas');
+    icon.width = 64;
+    icon.height = 64;
+    icon.getContext('2d').drawImage(
+      src,
+      150 - r - pad, 150 - r - pad, (r + pad) * 2, (r + pad) * 2,
+      0, 0, 64, 64
+    );
+    link.type = 'image/png';
+    link.href = icon.toDataURL('image/png');
+  }
+
   // ---------- starfield ----------
 
   let starField = [];
@@ -378,6 +403,7 @@
         tw: img.width,
         th: img.height,
       };
+      updateFavicon(); // the tab icon turns photoreal too
     });
   }
 
@@ -780,6 +806,7 @@
     loadWorld();
     loadTextures();
     drawMap(lat, lon);
+    updateFavicon();
 
     $('updatedAt').textContent =
       `Computed for ${fmtDate.format(now)}, ${fmtTime.format(now)} at ` +
@@ -923,6 +950,8 @@
   });
   initStars();
   sizeMap();
+  loadTextures(); // start early so the favicon is the real moon from the gate
+  updateFavicon();
   if (!reducedMotion) requestAnimationFrame(tickStars);
 
   // startup: URL params > saved location > ask
